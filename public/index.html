@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TechStore Pro - Oficial</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="stylesheet" href="style.css">
+<style>
+    /* Containers de Scroll Independente */
+    .carousel-wrapper {
+        position: relative;
+        margin-bottom: 10px;
+    }
+
+    .carousel-container {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto !important;
+        gap: 15px !important;
+        padding: 10px 20px 20px !important;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none; 
+    }
+    .carousel-container::-webkit-scrollbar { display: none; }
+
+    /* Setas indicativas Pretas com fundo circular branco */
+    .scroll-indicator {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 35px;
+        height: 35px;
+        background: white; 
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none; 
+        z-index: 10;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        color: black; 
+        font-size: 18px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+
+    .indicator-left { left: 10px; }
+    .indicator-right { right: 10px; }
+    .scroll-indicator.visible { opacity: 0.9; }
+
+    /* Estilo do Card */
+    .product-card {
+        scroll-snap-align: start;
+        flex: 0 0 200px !important;
+        background: #f1f1f1;
+        border-radius: 25px;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    }
+
+    /* Estrelas */
+    .rating-container { display: flex; align-items: center; justify-content: center; gap: 5px; margin: 5px 0; }
+    .stars-outer { position: relative; display: inline-block; font-size: 14px; color: #ccc; }
+    .stars-inner { position: absolute; top: 0; left: 0; white-space: nowrap; overflow: hidden; color: #ffb400; }
+    .rating-value { font-size: 12px; color: #777; font-weight: 700; }
+
+    /* RODAPÉ (FOOTER) */
+    footer {
+        background: #151515;
+        color: #888;
+        padding: 40px 20px;
+        margin-top: 50px;
+        border-top: 1px solid #333;
+        font-size: 13px;
+    }
+    .footer-container {
+        max-width: 1000px;
+        margin: auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 30px;
+    }
+    .footer-section h4 {
+        color: #fff;
+        margin-bottom: 15px;
+        font-size: 15px;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+    .footer-section ul { list-style: none; }
+    .footer-section ul li { margin-bottom: 8px; }
+    .footer-section a { color: #888; text-decoration: none; transition: 0.3s; cursor: pointer; }
+    .footer-section a:hover { color: #27ae60; }
+    .social-icons { display: flex; gap: 15px; margin-top: 15px; }
+    .social-icons a {
+        font-size: 20px;
+        background: #252525;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        color: #fff;
+    }
+    .footer-bottom {
+        text-align: center;
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid #222;
+        color: #555;
+    }
+    .selos-seguranca {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 15px;
+        opacity: 0.5;
+    }
+
+    /* ESTILO DO NOVO MODAL DE ERRO */
+    #error-modal {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
+        display: none; justify-content: center; align-items: center; z-index: 2000;
+    }
+    .modal-content {
+        background: #1c1c1c; width: 90%; max-width: 340px;
+        padding: 30px; border-radius: 28px; text-align: center;
+        border: 1px solid #333; box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+        transform: scale(0.7); transition: 0.3s;
+    }
+    #error-modal.active { display: flex; }
+    #error-modal.active .modal-content { transform: scale(1); }
+    .modal-icon { font-size: 55px; color: #e74c3c; margin-bottom: 15px; }
+    .modal-content h3 { color: white; margin-bottom: 12px; font-weight: 800; font-size: 20px; }
+    .modal-content p { color: #aaa; font-size: 14px; line-height: 1.6; margin-bottom: 25px; }
+    .btn-close-modal {
+        background: #27ae60; color: white; border: none; padding: 14px;
+        border-radius: 15px; font-weight: 800; cursor: pointer; width: 100%;
+        font-size: 14px; transition: 0.2s;
+    }
+
+    .category-section.hidden { display: none !important; }
+    .product-card.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<header>
+ <div class="top-bar">
+  <div class="logo" onclick="location.reload()">TECHSTORE</div>
+  <button class="cart-btn-main" onclick="toggleCart()">🛒 Carrinho (<span id="cart-count-badge">0</span>)</button>
+ </div>
+ <div class="search-container">
+    <input id="searchInput" placeholder="O que você procura hoje?" oninput="filtrarTexto()">
+ </div>
+  <div class="filter-bar">
+  <button class="filter-btn active" onclick="filtrarMarca('todos',this)">Todos</button>
+  <button class="filter-btn" onclick="filtrarMarca('iPhones',this)">iPhone</button>
+  <button class="filter-btn" onclick="filtrarMarca('Samsung',this)">Samsung</button>
+  <button class="filter-btn" onclick="filtrarMarca('Xiaomi',this)">Xiaomi</button>
+  <button class="filter-btn" onclick="filtrarMarca('Motorola',this)">Motorola</button>
+  <button class="filter-btn" onclick="filtrarMarca('Gamer',this)">Gamer</button>  <button class="filter-btn" onclick="filtrarMarca('Acessórios',this)">Acessórios</button>
+ </div>
+
+ <div class="countdown-banner">
+    <div class="banner-content">
+        <div class="banner-text">⚡ <strong>OFERTA RELÂMPAGO:</strong> Descontos expiram em:</div>
+        <div id="timer">
+            <div class="time-block"><span id="days">02</span><small>d</small></div>
+            <div class="time-block"><span id="hours">10</span><small>h</small></div>
+            <div class="time-block"><span id="minutes">32</span><small>m</small></div>
+            <div class="time-block"><span id="seconds">27</span><small>s</small></div>
+        </div>
+    </div>
+ </div>
+</header>
+
+<div id="vitrine"></div>
+
+<footer>
+    <div class="footer-container">
+        <div class="footer-section">
+            <h4>Fale Conosco</h4>
+            <ul>
+                <li><i class="fas fa-envelope"></i> suporte@techstore.com</li>
+                <li><i class="fas fa-clock"></i> Seg - Sex: 09h às 18h</li>
+                <li><i class="fas fa-map-marker-alt"></i> São Paulo, SP</li>
+            </ul>
+            <div class="social-icons">
+                <a onclick="mostrarErro()"><i class="fab fa-instagram"></i></a>
+                <a onclick="mostrarErro()"><i class="fab fa-twitter"></i></a>
+                <a onclick="mostrarErro()"><i class="fab fa-whatsapp"></i></a>
+            </div>
+        </div>
+        <div class="footer-section">
+            <h4>Institucional</h4>
+            <ul>
+                <li><a onclick="mostrarErro()">Política de Privacidade</a></li>
+                <li><a onclick="mostrarErro()">Termos de Uso</a></li>
+                <li><a onclick="mostrarErro()">Garantia Oficial</a></li>
+                <li><a onclick="mostrarErro()">Trocas e Devoluções</a></li>
+            </ul>
+        </div>
+        <div class="footer-section">
+            <h4>Sobre a Loja</h4>
+            <p>A TechStore é revendedora oficial certificada das maiores marcas de tecnologia. Garantimos procedência e nota fiscal em todos os pedidos.</p>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <div class="selos-seguranca">
+            <i class="fas fa-shield-alt fa-2x"></i>
+            <i class="fab fa-google-pay fa-2x"></i>
+            <i class="fab fa-apple-pay fa-2x"></i>
+            <i class="fas fa-lock fa-2x"></i>
+        </div>
+        <p style="margin-top: 15px;">&copy; 2026 TechStore Brasil - Todos os direitos reservados.</p>
+        <p style="font-size: 10px;">CNPJ: 00.000.000/0001-00</p>
+    </div>
+</footer>
+
+<div id="error-modal">
+    <div class="modal-content">
+        <div class="modal-icon"><i class="fas fa-wifi-slash"></i></div>
+        <h3>Ops! Erro de Conexão</h3>
+        <p>Parece que o nosso servidor de integração está instável no momento. Por favor, tente novamente em alguns minutos.</p>
+        <button class="btn-close-modal" onclick="fecharErro()">ENTENDI</button>
+    </div>
+</div>
+
+<div id="overlay" onclick="toggleCart()"></div>
+<div id="carrinho-lateral">
+    <div class="cart-header"><span>MEU CARRINHO</span><button onclick="toggleCart()" style="background:none; border:none; color:#fff; font-size:32px;">&times;</button></div>
+    <div class="cart-items" id="lista-carrinho"></div>
+    <div class="cart-footer">
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px;"><span>TOTAL:</span><span id="cart-total" style="color:#2ed573; font-weight:900; font-size:22px;">R$ 0,00</span></div>
+        <button class="btn-checkout" onclick="irParaPagamento()">FINALIZAR COMPRA</button>
+    </div>
+</div>
+
+<script>
+// Funções do Modal de Erro
+function mostrarErro() { document.getElementById('error-modal').classList.add('active'); }
+function fecharErro() { document.getElementById('error-modal').classList.remove('active'); }
+
+const produtos={
+ "iPhones":[
+  {n:"iPhone 16 Pro Max",p:10499,f:"i16pm.jpg"}, {n:"iPhone 15 Pro",p:7200,f:"i15p.jpg"}, {n:"iPhone 14 Pro",p:5800,f:"i14p.jpg"}, {n:"iPhone 13 Pro Max",p:4900,f:"i13pm.jpg"}, {n:"iPhone 13",p:3200,f:"i13.jpg"}, {n:"iPhone 12",p:2800,f:"i12.jpg"}, {n:"iPhone 7s",p:920,f:"i7s.jpg"}, {n:"iPhone 11",p:2100,f:"i11.jpg"}, {n:"iPhone XR",p:1300,f:"ixr.jpg"}, {n:"iPhone SE 2022",p:1000,f:"ise.jpg"}
+ ],
+ "Samsung":[
+  {n:"Galaxy S24 Ultra",p:7199,f:"s24u.jpg"}, {n:"Galaxy S23 Ultra",p:5100,f:"s23u.jpg"}, {n:"Galaxy S22 Ultra",p:3200,f:"s22u.jpg"}, {n:"Galaxy Z Fold 5",p:8900,f:"fold5.jpg"}, {n:"Galaxy Z Flip 5",p:3800,f:"flip5.jpg"}, {n:"Galaxy S24 Plus",p:5200,f:"s24p.jpg"}, {n:"Galaxy A55",p:1500,f:"a55.jpg"}, {n:"Galaxy A35",p:1300,f:"a35.jpg"}, {n:"Galaxy A25",p:1200,f:"a25.jpg"}, {n:"Galaxy A15",p:1050,f:"a15.jpg"}
+ ],
+ "Xiaomi":[
+  {n:"Xiaomi 14 Ultra",p:8500,f:"x14u.jpg"}, {n:"Xiaomi 14",p:5200,f:"x14.jpg"}, {n:"Xiaomi 13T",p:3500,f:"13t.jpg"}, {n:"Poco F6",p:2700,f:"f6.jpg"}, {n:"Poco F5",p:2100,f:"f5.jpg"}, {n:"Redmi Note 13 Pro",p:1800,f:"rn13p.jpg"}, {n:"Redmi Note 13",p:1400,f:"rn13.jpg"}, {n:"Redmi 13C",p:950,f:"13c.jpg"}, {n:"Poco X6 Pro",p:2100,f:"x6p.jpg"}, {n:"Redmi A3",p:650,f:"ra3.jpg"}
+ ],
+ "Motorola":[
+  {n:"Edge 50 Ultra",p:5400,f:"e50u.jpg"}, {n:"Razr 50 Ultra",p:6200,f:"razr50.jpg"}, {n:"Edge 40",p:2100,f:"e40.jpg"}, {n:"Edge 40 Neo",p:1950,f:"e40n.jpg"}, {n:"Moto G85",p:1850,f:"g85.jpg"}, {n:"Moto G73",p:1300,f:"g73.jpg"}, {n:"Moto G54",p:1200,f:"g54.jpg"}, {n:"Moto G34",p:1000,f:"g34.jpg"}, {n:"Moto G24",p:950,f:"g24.jpg"}, {n:"Moto E13",p:650,f:"e13.jpg"}
+ ],
+ "Gamer":[
+  {n:"Monitor Curvo 180Hz",p:1299,f:"monitor.jpg"}, 
+  {n:"Cadeira Gamer RGB",p:850,f:"cadeira.jpg"}, 
+  {n:"Memória RAM 16GB",p:450,f:"ram.jpg"}, 
+  {n:"Teclado Mecânico",p:280,f:"teclado.jpg"}, 
+  {n:"Mouse Gamer 12k DPI",p:190,f:"mouse.jpg"},
+  {n:"Pc Gamer Pichau",p:4320,f:"pc.jpg"},
+  {n:"Neologic Pc Gamer",p:4166,f:"neologic.jpg"}
+ ],
+ "Acessórios":[
+  {n:"AirPods Pro 2",p:1350,f:"airp.jpg"}, {n:"Galaxy Watch 7",p:1100,f:"watch7.jpg"}, {n:"Apple Watch S9",p:1750,f:"aws9.jpg"}, {n:"Power Bank 10k",p:90,f:"pb.jpg"}, {n:"Carregador 20W",p:100,f:"car1.jpg"}, {n:"Capa Silicone",p:35,f:"cap1.jpg"}, {n:"Película Privativa",p:25,f:"pel.jpg"}, {n:"Fone Bluetooth",p:95,f:"fonebt.jpg"}, {n:"Cabo USB-C",p:40,f:"cab1.jpg"}, {n:"Suporte Veicular",p:65,f:"sup.jpg"}
+ ]
+};
+
+let carrinho = JSON.parse(localStorage.getItem('carrinhoTechStore')) || [];
+
+function precoFinal(nome, p){ 
+    if(nome === "Galaxy S24 Ultra") return 5300;
+    if(p >= 5000) return 3250 + (p % 751); 
+    return p;
+}
+
+function checarScroll(el) {
+    const wrapper = el.parentElement;
+    const setaEsq = wrapper.querySelector('.indicator-left');
+    const setaDir = wrapper.querySelector('.indicator-right');
+    const scrollEsq = el.scrollLeft;
+    const noFinal = el.scrollWidth - el.clientWidth - scrollEsq < 15;
+
+    if(scrollEsq > 20) setaEsq.classList.add('visible');
+    else setaEsq.classList.remove('visible');
+
+    if(noFinal) setaDir.classList.remove('visible');
+    else setaDir.classList.add('visible');
+}
+
+function renderizar(){
+ let html='';
+ for(let cat in produtos){
+  html+=`<div class="category-section" id="cat-${cat}"><h2>${cat}</h2>`;
+  const metade = Math.ceil(produtos[cat].length / 2);
+  const filas = [produtos[cat].slice(0, metade), produtos[cat].slice(metade)];
+
+  filas.forEach((fila) => {
+    html+=`
+    <div class="carousel-wrapper">
+        <div class="scroll-indicator indicator-left"><i class="fas fa-chevron-left"></i></div>
+        <div class="carousel-container" onscroll="checarScroll(this)">`;
+    fila.forEach(p=>{
+        let novo=precoFinal(p.n, p.p), fURL=`fotos/${p.f}`;
+        let nota = (Math.random() * (4.9 - 4.1) + 4.1).toFixed(1);
+        html+=`
+        <div class="product-card" data-name="${p.n.toLowerCase()}">
+            <div class="img-box"><img src="${fURL}" onerror="this.src='https://via.placeholder.com/150'"></div>
+                        <div class="card-content">
+                <h3>${p.n}</h3>
+                <div class="rating-container">
+                    <div class="stars-outer">★★★★★<div class="stars-inner" style="width: ${(nota/5)*100}%">★★★★★</div></div>
+                    <span class="rating-value">${nota}</span>
+                </div>
+                
+                <div class="price-box" style="height: 50px; display: flex; flex-direction: column; justify-content: center;">
+                    ${p.p !== novo ? `
+                        <span class="price-old" style="text-decoration: line-through; color: #888; font-size: 11px; font-weight: 600;">
+                            De: R$ ${p.p.toLocaleString('pt-BR',{minimumFractionDigits:2})}
+                        </span>
+                    ` : ''}
+                    <div class="price" style="color: #111; font-weight:900; font-size: 19px;">
+                        R$ ${novo.toLocaleString('pt-BR',{minimumFractionDigits:2})}
+                    </div>
+                </div>
+            </div>
+            <button class="buy-button" onclick="adicionarAoCarrinho('${p.n}','${novo}','${fURL}')">Comprar</button>
+        </div>`;
+    });
+    html+=`</div><div class="scroll-indicator indicator-right visible"><i class="fas fa-chevron-right"></i></div></div>`;
+  });
+  html+='</div>';
+ }
+ document.getElementById('vitrine').innerHTML=html;
+ setTimeout(() => { document.querySelectorAll('.carousel-container').forEach(c => checarScroll(c)); }, 300);
+}
+
+function filtrarTexto(){
+ let t=document.getElementById('searchInput').value.toLowerCase();
+ document.querySelectorAll('.category-section').forEach(section => {
+    let cards = section.querySelectorAll('.product-card');
+    let temResultado = false;
+    cards.forEach(card => {
+        if(card.dataset.name.includes(t)) { card.classList.remove('hidden'); temResultado = true; }
+        else card.classList.add('hidden');
+    });
+    if (t === "") { section.classList.remove('hidden'); cards.forEach(c => c.classList.remove('hidden')); }
+    else { temResultado ? section.classList.remove('hidden') : section.classList.add('hidden'); }
+ });
+}
+
+function adicionarAoCarrinho(nome, preco, foto) { carrinho.push({ n: nome, p: preco, f: foto }); atualizarCarrinho(); toggleCart(); }
+
+function atualizarCarrinho() {
+    const lista = document.getElementById('lista-carrinho');
+    const badge = document.getElementById('cart-count-badge');
+    localStorage.setItem('carrinhoTechStore', JSON.stringify(carrinho));
+    badge.innerText = carrinho.length;
+    lista.innerHTML = '';
+    let total = 0;
+    carrinho.forEach((item, index) => {
+        total += parseFloat(item.p);
+        lista.innerHTML += `<div class="cart-item"><img src="${item.f}"><div style="flex:1"><h4 style="color:#fff">${item.n}</h4><p style="color:#27ae60">R$ ${parseFloat(item.p).toLocaleString('pt-BR')}</p><button onclick="removerItem(${index})" style="color:red; background:none; border:none; cursor:pointer;">Remover</button></div></div>`;
+    });
+    document.getElementById('cart-total').innerText = `R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
+}
+
+function toggleCart() { document.getElementById('carrinho-lateral').classList.toggle('active'); document.getElementById('overlay').classList.toggle('active'); }
+function removerItem(i) { carrinho.splice(i, 1); atualizarCarrinho(); }
+function irParaPagamento() { if(carrinho.length === 0) return alert("Adicione itens!"); window.location.href = 'pagamento.html'; }
+
+function filtrarMarca(m,b){
+ document.getElementById('searchInput').value = ""; 
+ document.querySelectorAll('.filter-btn').forEach(x=>x.classList.remove('active'));
+ b.classList.add('active');
+ document.querySelectorAll('.category-section').forEach(s=>{
+  if(m==='todos') s.classList.remove('hidden');
+  else s.id==='cat-'+m ? s.classList.remove('hidden') : s.classList.add('hidden');
+ });
+}
+
+renderizar();
+atualizarCarrinho();
+
+// LÓGICA DA CONTAGEM
+function iniciarContagem() {
+    let tempoTotal = (2 * 86400) + (10 * 3600) + (32 * 60) + 27;
+    setInterval(() => {
+        if (tempoTotal <= 0) return;
+        tempoTotal--;
+        const d = Math.floor(tempoTotal / 86400);
+        const h = Math.floor((tempoTotal % 86400) / 3600);
+        const m = Math.floor((tempoTotal % 3600) / 60);
+        const s = Math.floor(tempoTotal % 60);
+        document.getElementById('days').innerText = String(d).padStart(2, '0');
+        document.getElementById('hours').innerText = String(h).padStart(2, '0');
+        document.getElementById('minutes').innerText = String(m).padStart(2, '0');
+        document.getElementById('seconds').innerText = String(s).padStart(2, '0');
+    }, 1000);
+}
+iniciarContagem();
+</script>
+</body>
+</html>
