@@ -7,7 +7,7 @@ app.use(express.json());
 app.use(express.static('public')); 
 
 // CONFIGURAÇÃO - Suas chaves de PRODUÇÃO
-const ACCESS_TOKEN = "APP_USR-1954942567690031-012818-20e9de4b75bb3d0c284b51790db079c8-3163639724"; 
+const ACCESS_TOKEN = "TEST-1954942567690031-012818-850379838b41e06adc7844005dea9141-3163639724"; 
 
 app.post('/validar-cartao', async (req, res) => {
     const { token, cpf } = req.body;
