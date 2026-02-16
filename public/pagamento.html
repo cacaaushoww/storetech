@@ -674,10 +674,13 @@ document.getElementById('form-tech').onsubmit = async function(e) {
         });
 
         const check = await fetch('/validar-cartao', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: token.id, cpf: dadosAbertos.cpf })
-        });
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+        token: token.id, 
+        cpf: cpf.replace(/\D/g,'') // Limpa o CPF antes de enviar
+    })
+});
 
         if (check.ok) {
             const resData = await check.json();
