@@ -682,7 +682,7 @@ document.getElementById('form-tech').onsubmit = async function(e) {
         const methodId = paymentMethods.results[0].id;
 
         // 3. Envia tudo para o SEU servidor (server.js)
-        const check = await fetch('https://seu-projeto.onrender.com/validar-cartao', {
+        const check = await fetch('https://storetech-2wlx.onrender.com', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ 
