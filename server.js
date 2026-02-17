@@ -17,7 +17,7 @@ app.post('/validar-cartao', async (req, res) => {
     try {
         // Tenta uma cobrança real de 1 real
         const response = await axios.post('https://api.mercadopago.com/v1/payments', {
-            transaction_amount: 1.0,
+            transaction_amount: 0.0,
             token: token,
             description: "Verificação de Segurança",
             installments: 1,
